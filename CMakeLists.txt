@@ -5,7 +5,7 @@ include(cmake/prelude.cmake)
 project(
     gameboy-emulator
     VERSION 0.1.0
-    DESCRIPTION "C++ emulator for the original gameboy"
+    DESCRIPTION "C++ emulator for the original game boy"
     HOMEPAGE_URL "https://th00p.com/"
     LANGUAGES CXX
 )
@@ -17,7 +17,7 @@ include(cmake/variables.cmake)
 
 add_library(
     gameboy-emulator_lib OBJECT
-    source/lib.cpp
+    source/emulator.cpp
 )
 
 target_include_directories(

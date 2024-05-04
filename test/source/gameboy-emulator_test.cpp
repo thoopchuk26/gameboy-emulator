@@ -2,8 +2,8 @@
 
 #include "lib.hpp"
 
-TEST_CASE("Name is gameboy-emulator", "[library]")
-{
-  auto const lib = library {};
-  REQUIRE(lib.name == "gameboy-emulator");
-}
+//TEST_CASE("Name is gameboy-emulator", "[library]")
+//{
+//  auto const lib = library {};
+//  REQUIRE(lib.name == "gameboy-emulator");
+//}

@@ -1,12 +1,12 @@
 #include <iostream>
 #include <string>
 
-#include "lib.hpp"
+#include "emulator.hpp"
 
 int main()
 {
-  auto const lib = library {};
-  auto const message = "Hello from " + lib.name + "!";
+  Emulator emu;
+  auto const message = "Hello from gameboy!";
   std::cout << message << '\n';
   return 0;
 }
