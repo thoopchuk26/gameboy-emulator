@@ -1,5 +1,6 @@
 #pragma once
-#include <common.hpp>
+#include <cart.hpp>
+#include <cpu.hpp>
 
 struct EmulatorContext
 {
@@ -11,11 +12,19 @@ struct EmulatorContext
 class Emulator
 {
 public:
-  void emulator_start();
+  Emulator()
+      : cpu(*this)
+  {
+  }
+
+  Cartridge cart;
+
+  int emulator_start(std::string rom);
+  void emulator_cycles(int cpu_cycles);
+  EmulatorContext* get_context();
+  void delay(u32 ms);
 
 private:
+  CPU cpu;
   EmulatorContext context;
-
-  void delay(u32 ms);
-  EmulatorContext get_context();
 };

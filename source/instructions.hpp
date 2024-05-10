@@ -1,7 +1,8 @@
 #pragma once
 #include <common.hpp>
 
-enum address_mode {
+enum address_mode
+{
   AM_IMP,
   AM_R_D16,
   AM_R_R,
@@ -117,5 +118,4 @@ struct instruction
 };
 
 instruction* instruction_by_opcode(u8 opcode);
-
-char* instruction_name(instruction_type t);
+const char* instruction_name(instruction_type t);

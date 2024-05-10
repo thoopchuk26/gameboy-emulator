@@ -18,6 +18,10 @@ include(cmake/variables.cmake)
 add_library(
     gameboy-emulator_lib OBJECT
     source/emulator.cpp
+    source/bus.cpp
+    source/cart.cpp
+    source/cpu.cpp
+    source/instructions.cpp
 )
 
 target_include_directories(
@@ -30,6 +34,12 @@ target_compile_features(gameboy-emulator_lib PUBLIC cxx_std_17)
 
 find_package(fmt REQUIRED)
 target_link_libraries(gameboy-emulator_lib PRIVATE fmt::fmt)
+
+find_package(SDL2 REQUIRED)
+target_link_libraries(gameboy-emulator_lib PRIVATE SDL2::SDL2)
+
+find_package(SDL2_ttf REQUIRED)
+target_link_libraries(gameboy-emulator_lib PRIVATE $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>)
 
 # ---- Declare executable ----
 

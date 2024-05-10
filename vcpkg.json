@@ -3,12 +3,16 @@
   "version-semver": "0.1.0",
   "dependencies": [
     {
-      "name": "fmt",
-      "version>=": "10.2.1#1"
-    },
-    {
       "name": "sdl2",
       "version>=": "2.30.0"
+    },
+    {
+      "name": "sdl2-ttf",
+      "version>=": "2.22.0"
+    },
+    {
+      "name": "fmt",
+      "version>=": "10.2.1#1"
     }
   ],
   "default-features": [],

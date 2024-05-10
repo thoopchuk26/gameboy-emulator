@@ -6,7 +6,8 @@
 int main()
 {
   Emulator emu;
-  auto const message = "Hello from gameboy!";
-  std::cout << message << '\n';
-  return 0;
+  return emu.emulator_start(
+      "C:/programming_projects/cpp_projects/gameboy-emulator/roms/"
+      "dmg-acid2."
+      "gb");
 }
