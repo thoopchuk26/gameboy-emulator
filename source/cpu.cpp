@@ -29,19 +29,25 @@ void CPU::fetch_data()
 
   switch (cpu_context.cur_instruction->mode) {
     case AM_IMP:
-      return;
+      break;
 
     case AM_R:
       cpu_context.fetched_data =
           cpu_read_reg(cpu_context.cur_instruction->reg_1);
-      return;
+      break;
+
+    case AM_R_R:
+      cpu_context.fetched_data =
+          cpu_read_reg(cpu_context.cur_instruction->reg_2);
+      break;
 
     case AM_R_D8:
       cpu_context.fetched_data = memory_bus.bus_read(cpu_context.registers.pc);
 
       cpu_context.registers.pc++;
-      return;
+      break;
 
+    case AM_R_D16:
     case AM_D16: {
       u16 lo = memory_bus.bus_read(cpu_context.registers.pc);
       emulator.emulator_cycles(1);
@@ -52,16 +58,143 @@ void CPU::fetch_data()
       cpu_context.fetched_data = lo | (hi << 8);
 
       cpu_context.registers.pc += 2;
+    } break;
 
-      return;
-    }
+    case AM_MR_R:
+      cpu_context.fetched_data =
+          cpu_read_reg(cpu_context.cur_instruction->reg_2);
+      cpu_context.mem_destination =
+          cpu_read_reg(cpu_context.cur_instruction->reg_1);
+      cpu_context.dest_is_mem = true;
+
+      if (cpu_context.cur_instruction->reg_1 == RT_C) {
+        cpu_context.mem_destination |= 0xFF00;
+      }
+
+      break;
+
+    case AM_R_MR: {
+      u16 address = cpu_read_reg(cpu_context.cur_instruction->reg_2);
+      if (cpu_context.cur_instruction->reg_1 == RT_C) {
+        cpu_context.mem_destination |= 0xFF00;
+      }
+
+      cpu_context.fetched_data = memory_bus.bus_read(address);
+      emulator.emulator_cycles(1);
+    } break;
+
+    case AM_R_HLI:
+      cpu_context.fetched_data =
+          memory_bus.bus_read(cpu_read_reg(cpu_context.cur_instruction->reg_2));
+      emulator.emulator_cycles(1);
+      cpu_set_reg(RT_HL, cpu_read_reg(RT_HL) + 1);
+      break;
+
+    case AM_R_HLD:
+      cpu_context.fetched_data =
+          memory_bus.bus_read(cpu_read_reg(cpu_context.cur_instruction->reg_2));
+      emulator.emulator_cycles(1);
+      cpu_set_reg(RT_HL, cpu_read_reg(RT_HL) - 1);
+      break;
+
+    case AM_HLI_R:
+      cpu_context.fetched_data =
+          cpu_read_reg(cpu_context.cur_instruction->reg_2);
+      cpu_context.mem_destination =
+          cpu_read_reg(cpu_context.cur_instruction->reg_1);
+      cpu_context.dest_is_mem = true;
+      cpu_set_reg(RT_HL, cpu_read_reg(RT_HL) + 1);
+      break;
+
+    case AM_HLD_R:
+      cpu_context.fetched_data =
+          cpu_read_reg(cpu_context.cur_instruction->reg_2);
+      cpu_context.mem_destination =
+          cpu_read_reg(cpu_context.cur_instruction->reg_1);
+      cpu_context.dest_is_mem = true;
+      cpu_set_reg(RT_HL, cpu_read_reg(RT_HL) - 1);
+      break;
+
+    case AM_R_A8:
+      cpu_context.fetched_data = memory_bus.bus_read(cpu_context.registers.pc);
+      emulator.emulator_cycles(1);
+      cpu_context.registers.pc++;
+      break;
+
+    case AM_A8_R:
+      cpu_context.mem_destination =
+          memory_bus.bus_read(cpu_context.registers.pc) | 0xFF00;
+      cpu_context.dest_is_mem = true;
+      emulator.emulator_cycles(1);
+      cpu_context.registers.pc++;
+      break;
+
+    case AM_HL_SPR:
+      cpu_context.fetched_data = memory_bus.bus_read(cpu_context.registers.pc);
+      emulator.emulator_cycles(1);
+      cpu_context.registers.pc++;
+      break;
+
+    case AM_D8:
+      cpu_context.fetched_data = memory_bus.bus_read(cpu_context.registers.pc);
+      emulator.emulator_cycles(1);
+      cpu_context.registers.pc++;
+      break;
+
+    case AM_A16_R:
+    case AM_D16_R: {
+      u16 lo = memory_bus.bus_read(cpu_context.registers.pc);
+      emulator.emulator_cycles(1);
+
+      u16 hi = memory_bus.bus_read(cpu_context.registers.pc + 1);
+      emulator.emulator_cycles(1);
+
+      cpu_context.mem_destination = lo | (hi << 8);
+      cpu_context.dest_is_mem = true;
+
+      cpu_context.registers.pc += 2;
+      cpu_context.fetched_data =
+          cpu_read_reg(cpu_context.cur_instruction->reg_2);
+    } break;
+
+    case AM_MR_D8:
+      cpu_context.fetched_data = memory_bus.bus_read(cpu_context.registers.pc);
+      emulator.emulator_cycles(1);
+      cpu_context.registers.pc++;
+      cpu_context.mem_destination =
+          cpu_read_reg(cpu_context.cur_instruction->reg_1);
+      cpu_context.dest_is_mem = true;
+      break;
+
+    case AM_MR:
+      cpu_context.mem_destination =
+          cpu_read_reg(cpu_context.cur_instruction->reg_1);
+      cpu_context.dest_is_mem = true;
+      cpu_context.fetched_data =
+          memory_bus.bus_read(cpu_read_reg(cpu_context.cur_instruction->reg_1));
+      emulator.emulator_cycles(1);
+      break;
+
+    case AM_R_A16: {
+      u16 lo = memory_bus.bus_read(cpu_context.registers.pc);
+      emulator.emulator_cycles(1);
+
+      u16 hi = memory_bus.bus_read(cpu_context.registers.pc + 1);
+      emulator.emulator_cycles(1);
+
+      u16 address = lo | (hi << 8);
+
+      cpu_context.registers.pc += 2;
+      cpu_context.fetched_data = memory_bus.bus_read(address);
+      emulator.emulator_cycles(1);
+    } break;
 
     default:
       printf("Unknown Addressing Mode! %d (%02X)\n",
              cpu_context.cur_instruction->mode,
              cpu_context.cur_opcode);
       exit(-7);
-      return;
+      break;
   }
 }
 
@@ -336,7 +469,7 @@ void CPU::proc_ld()
   if (cpu_context.dest_is_mem) {
     // if it's a 16 bit register
     if (cpu_context.cur_instruction->reg_2 >= RT_AF) {
-      // emulator->emulator_cycles(1);
+      emulator.emulator_cycles(1);
       memory_bus.bus_write16(cpu_context.mem_destination,
                              cpu_context.fetched_data);
     } else {

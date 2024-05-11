@@ -3,6 +3,7 @@
 #include <instructions.hpp>
 
 instruction instructions[0x100] = {
+    // 0x0X
     {IN_NOP, AM_IMP},
     {IN_LD, AM_R_D16, RT_BC},
     {IN_LD, AM_MR_R, RT_BC, RT_A},
@@ -20,6 +21,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_D8, RT_C},
     {IN_RRCA},
 
+    // 0x1X
     {IN_STOP},
     {IN_LD, AM_R_D16, RT_DE},
     {IN_LD, AM_MR_R, RT_DE, RT_A},
@@ -37,6 +39,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_D8, RT_E},
     {IN_RRA},
 
+    // 0x2X
     {IN_JR, AM_D8, RT_NONE, RT_NONE, CT_NZ},
     {IN_LD, AM_R_D16, RT_HL},
     {IN_LD, AM_HLI_R, RT_HL, RT_A},
@@ -54,6 +57,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_D8, RT_L},
     {IN_CPL},
 
+    // 0x3X
     {IN_JR, AM_D8, RT_NONE, RT_NONE, CT_NC},
     {IN_LD, AM_R_D16, RT_SP},
     {IN_LD, AM_HLD_R, RT_HL, RT_A},
@@ -71,6 +75,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_D8, RT_A},
     {IN_CCF},
 
+    // 0x4X
     {IN_LD, AM_R_R, RT_B, RT_B},
     {IN_LD, AM_R_R, RT_B, RT_C},
     {IN_LD, AM_R_R, RT_B, RT_D},
@@ -88,6 +93,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_MR, RT_C, RT_HL},
     {IN_LD, AM_R_R, RT_C, RT_A},
 
+    // 0x5X
     {IN_LD, AM_R_R, RT_D, RT_B},
     {IN_LD, AM_R_R, RT_D, RT_C},
     {IN_LD, AM_R_R, RT_D, RT_D},
@@ -105,6 +111,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_MR, RT_E, RT_HL},
     {IN_LD, AM_R_R, RT_E, RT_A},
 
+    // 0x6X
     {IN_LD, AM_R_R, RT_H, RT_B},
     {IN_LD, AM_R_R, RT_H, RT_C},
     {IN_LD, AM_R_R, RT_H, RT_D},
@@ -122,6 +129,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_MR, RT_L, RT_HL},
     {IN_LD, AM_R_R, RT_L, RT_A},
 
+    // 0x7X
     {IN_LD, AM_MR_R, RT_HL, RT_B},
     {IN_LD, AM_MR_R, RT_HL, RT_C},
     {IN_LD, AM_MR_R, RT_HL, RT_D},
@@ -139,6 +147,7 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_MR, RT_A, RT_HL},
     {IN_LD, AM_R_R, RT_A, RT_A},
 
+    // 0x8X
     {IN_ADD, AM_R_R, RT_A, RT_B},
     {IN_ADD, AM_R_R, RT_A, RT_C},
     {IN_ADD, AM_R_R, RT_A, RT_D},
@@ -156,6 +165,7 @@ instruction instructions[0x100] = {
     {IN_ADC, AM_R_MR, RT_A, RT_HL},
     {IN_ADC, AM_R_R, RT_A, RT_A},
 
+    // 0x9X
     {IN_SUB, AM_R_R, RT_A, RT_B},
     {IN_SUB, AM_R_R, RT_A, RT_C},
     {IN_SUB, AM_R_R, RT_A, RT_D},
@@ -173,6 +183,7 @@ instruction instructions[0x100] = {
     {IN_SBC, AM_R_MR, RT_A, RT_HL},
     {IN_SBC, AM_R_R, RT_A, RT_A},
 
+    // 0xAX
     {IN_AND, AM_R_R, RT_A, RT_B},
     {IN_AND, AM_R_R, RT_A, RT_C},
     {IN_AND, AM_R_R, RT_A, RT_D},
@@ -190,6 +201,7 @@ instruction instructions[0x100] = {
     {IN_XOR, AM_R_MR, RT_A, RT_HL},
     {IN_XOR, AM_R_R, RT_A, RT_A},
 
+    // 0xBX
     {IN_OR, AM_R_R, RT_A, RT_B},
     {IN_OR, AM_R_R, RT_A, RT_C},
     {IN_OR, AM_R_R, RT_A, RT_D},
@@ -207,6 +219,7 @@ instruction instructions[0x100] = {
     {IN_CP, AM_R_MR, RT_A, RT_HL},
     {IN_CP, AM_R_R, RT_A, RT_A},
 
+    // 0xCX
     {IN_RET, AM_IMP, RT_NONE, RT_NONE, CT_NZ},
     {IN_POP, AM_R, RT_BC},
     {IN_JP, AM_D16, RT_NONE, RT_NONE, CT_NZ},
@@ -224,9 +237,11 @@ instruction instructions[0x100] = {
     {IN_ADC, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x08},
 
+    // 0xDX
     {IN_RET, AM_IMP, RT_NONE, RT_NONE, CT_NC},
     {IN_POP, AM_R, RT_DE},
     {IN_JP, AM_D16, RT_NONE, RT_NONE, CT_NC},
+    {},
     {IN_CALL, AM_D16, RT_NONE, RT_NONE, CT_NC},
     {IN_PUSH, AM_R, RT_DE},
     {IN_SUB, AM_R_D8, RT_A},
@@ -234,22 +249,31 @@ instruction instructions[0x100] = {
     {IN_RET, AM_IMP, RT_NONE, RT_NONE, CT_C},
     {IN_RETI},
     {IN_JP, AM_D16, RT_NONE, RT_NONE, CT_C},
+    {},
     {IN_CALL, AM_D16, RT_NONE, RT_NONE, CT_C},
+    {},
     {IN_SBC, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x18},
 
+    // 0xEX
     {IN_LDH, AM_A8_R, RT_NONE, RT_A},
     {IN_POP, AM_R, RT_HL},
     {IN_LD, AM_MR_R, RT_C, RT_A},
+    {},
+    {},
     {IN_PUSH, AM_R, RT_HL},
     {IN_AND, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x20},
     {IN_ADD, AM_R_D8, RT_SP},
     {IN_JP, AM_R, RT_HL},
     {IN_LD, AM_A16_R, RT_NONE, RT_A},
+    {},
+    {},
+    {},
     {IN_XOR, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x28},
 
+    // 0xFX
     {IN_LDH, AM_R_A8, RT_A},
     {IN_POP, AM_R, RT_AF},
     {IN_LD, AM_R_MR, RT_A, RT_C},
@@ -261,6 +285,8 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_R, RT_SP, RT_HL},
     {IN_LD, AM_R_A16, RT_A},
     {IN_EI},
+    {},
+    {},
     {IN_CP, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x38},
 };
