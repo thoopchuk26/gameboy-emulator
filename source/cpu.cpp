@@ -1,8 +1,14 @@
 #include <memory>
 
+#include "cpu.hpp"
+
 #include <cpu.hpp>
 #include <emulator.hpp>
 #include <instructions.hpp>
+
+#include "cpu.hpp"
+
+register_type rt_lookup[] = {RT_B, RT_C, RT_D, RT_E, RT_H, RT_L, RT_HL, RT_A};
 
 void CPU::cpu_init()
 {
@@ -206,15 +212,31 @@ bool CPU::cpu_step()
     fetch_instruction();
     fetch_data();
 
-    printf("%04X: %-7s (%02X %02X %02X) A: %02X B: %02X C: %02X\n",
-           pc,
-           instruction_name(cpu_context.cur_instruction->type),
-           cpu_context.cur_opcode,
-           memory_bus.bus_read(pc + 1),
-           memory_bus.bus_read(pc + 2),
-           cpu_context.registers.a,
-           cpu_context.registers.b,
-           cpu_context.registers.c);
+    std::string flags;
+    flags += (cpu_context.registers.f & (1 << 7) ? 'Z' : '-');
+    flags += (cpu_context.registers.f & (1 << 6) ? 'N' : '-');
+    flags += (cpu_context.registers.f & (1 << 5) ? 'H' : '-');
+    flags += (cpu_context.registers.f & (1 << 4) ? 'C' : '-');
+
+    printf(
+        "%08lX - %04X: %-7s (%02X %02X %02X) A: %02X F:%s BC: %02X%02X DE: "
+        "%02X%02X "
+        "HL: "
+        "%02X$02X\n",
+        emulator.get_context()->ticks,
+        pc,
+        instruction_name(cpu_context.cur_instruction->type),
+        cpu_context.cur_opcode,
+        memory_bus.bus_read(pc + 1),
+        memory_bus.bus_read(pc + 2),
+        cpu_context.registers.a,
+        flags.c_str(),
+        cpu_context.registers.b,
+        cpu_context.registers.c,
+        cpu_context.registers.d,
+        cpu_context.registers.e,
+        cpu_context.registers.h,
+        cpu_context.registers.l);
 
     if (cpu_context.cur_instruction == NULL) {
       printf("Unknown Instruction! %02X\n", cpu_context.cur_opcode);
@@ -222,6 +244,21 @@ bool CPU::cpu_step()
     }
 
     execute();
+  } else {
+    emulator.emulator_cycles(1);
+
+    if (cpu_context.int_flags) {
+      cpu_context.halted = false;
+    }
+  }
+
+  if (cpu_context.int_master_enabled) {
+    cpu_handle_interrupts();
+    cpu_context.enabling_ime = false;
+  }
+
+  if (cpu_context.enabling_ime) {
+    cpu_context.int_master_enabled = true;
   }
 
   return true;
@@ -233,6 +270,7 @@ void CPU::execute()
          cpu_context.cur_opcode,
          cpu_context.registers.pc);
 
+  // execute the correct instruction function
   switch (cpu_context.cur_instruction->type) {
     case IN_NOP:
       proc_nop();
@@ -249,10 +287,92 @@ void CPU::execute()
     case IN_XOR:
       proc_xor();
       break;
+    case IN_LDH:
+      proc_ldh();
+      break;
+    case IN_JR:
+      proc_jr();
+      break;
+    case IN_CALL:
+      proc_call();
+      break;
+    case IN_RET:
+      proc_ret();
+      break;
+    case IN_RETI:
+      proc_reti();
+      break;
+    case IN_RST:
+      proc_rst();
+      break;
+    case IN_DEC:
+      proc_dec();
+      break;
+    case IN_INC:
+      proc_inc();
+      break;
+    case IN_ADD:
+      proc_add();
+      break;
+    case IN_SUB:
+      proc_sub();
+      break;
+    case IN_ADC:
+      proc_adc();
+      break;
+    case IN_SBC:
+      proc_sbc();
+      break;
+    case IN_AND:
+      proc_and();
+      break;
+    case IN_OR:
+      proc_or();
+      break;
+    case IN_CP:
+      proc_cp();
+      break;
+    case IN_CB:
+      proc_cb();
+      break;
+    case IN_RLA:
+      proc_rla();
+      break;
+    case IN_RLCA:
+      proc_rlca();
+      break;
+    case IN_RRA:
+      proc_rra();
+      break;
+    case IN_RRCA:
+      proc_rrca();
+      break;
+    case IN_STOP:
+      proc_stop();
+      break;
+    case IN_HALT:
+      proc_halt();
+      break;
+    case IN_CCF:
+      proc_ccf();
+      break;
+    case IN_CPL:
+      proc_cpl();
+      break;
+    case IN_SCF:
+      proc_scf();
+      break;
+    case IN_DAA:
+      proc_daa();
+      break;
+    case IN_EI:
+      proc_ei();
+      break;
+    case IN_POP:
+      proc_pop();
+      break;
     case IN_NONE:
       proc_none();
-      break;
-    default:
       break;
   }
 }
@@ -451,10 +571,333 @@ void CPU::cpu_set_flags(char z, char n, char h, char c)
   }
 }
 
+void CPU::cpu_handle_interrupts()
+{
+  if (interrupt_check(0x40, IT_VBLANK)) {
+  } else if (interrupt_check(0x48, IT_LCD_STAT)) {
+  } else if (interrupt_check(0x50, IT_TIMER)) {
+  } else if (interrupt_check(0x58, IT_SERIAL)) {
+  } else if (interrupt_check(0x60, IT_JOYPAD)) {
+  }
+}
+
+void CPU::cpu_request_interrupts(interrupt_type t) {}
+
+void CPU::interrupt_handle(u16 address)
+{
+  stack_push16(cpu_context.registers.pc);
+  cpu_context.registers.pc = address;
+}
+
+bool CPU::interrupt_check(u16 address, interrupt_type t)
+{
+  if (cpu_context.int_flags & t && cpu_context.ie_register & t) {
+    interrupt_handle(address);
+    cpu_context.int_flags &= ~t;
+    cpu_context.halted = false;
+    cpu_context.int_master_enabled = false;
+
+    return true;
+  }
+
+  return false;
+}
+
+u8 CPU::cpu_get_ie_register()
+{
+  return cpu_context.ie_register;
+}
+
+void CPU::cpu_set_ie_register(u8 n)
+{
+  cpu_context.ie_register = n;
+}
+
+void CPU::stack_push(u8 data)
+{
+  cpu_context.registers.sp--;
+  memory_bus.bus_write(cpu_context.registers.sp, data);
+}
+
+u8 CPU::stack_pop()
+{
+  return memory_bus.bus_read(cpu_context.registers.sp++);
+}
+
+void CPU::stack_push16(u16 data)
+{
+  stack_push((data >> 8) & 0xFF);
+  stack_push(data & 0xFF);
+}
+
+u16 CPU::stack_pop16()
+{
+  u16 lo = stack_pop();
+  u16 hi = stack_pop();
+
+  return (hi << 8) | lo;
+}
+
 void CPU::proc_none()
 {
   printf("INVALID INSTRUCTION!\n");
   exit(-7);
+}
+
+void CPU::proc_pop()
+{
+  u16 lo = stack_pop();
+  emulator.emulator_cycles(1);
+  u16 hi = stack_pop();
+  emulator.emulator_cycles(1);
+
+  u16 n = (hi << 8) | lo;
+
+  cpu_set_reg(cpu_context.cur_instruction->reg_1, n);
+
+  if (cpu_context.cur_instruction->reg_1 == RT_AF) {
+    cpu_set_reg(cpu_context.cur_instruction->reg_1, n & 0xFF00);
+  }
+}
+
+void CPU::proc_push()
+{
+  u16 hi = (cpu_read_reg(cpu_context.cur_instruction->reg_1) >> 8) & 0xFF;
+  emulator.emulator_cycles(1);
+  stack_push(hi);
+
+  u16 lo = (cpu_read_reg(cpu_context.cur_instruction->reg_2) >> 8) & 0xFF;
+  emulator.emulator_cycles(1);
+  stack_push(lo);
+
+  emulator.emulator_cycles(1);
+}
+
+void CPU::proc_call()
+{
+  goto_addr(cpu_context.fetched_data, true);
+}
+
+void CPU::proc_jr()
+{
+  char rel = (char)(cpu_context.fetched_data & 0xFF);
+  u16 addr = cpu_context.registers.pc + rel;
+  goto_addr(addr, false);
+}
+
+void CPU::proc_ret()
+{
+  if (cpu_context.cur_instruction->cond != CT_NONE) {
+    emulator.emulator_cycles(1);
+  }
+
+  if (check_cond()) {
+    u16 lo = stack_pop();
+    emulator.emulator_cycles(1);
+    u16 hi = stack_pop();
+    emulator.emulator_cycles(1);
+
+    u16 n = (hi << 8) | lo;
+    cpu_context.registers.pc = n;
+
+    emulator.emulator_cycles(1);
+  }
+}
+
+void CPU::proc_reti()
+{
+  cpu_context.int_master_enabled = true;
+  proc_ret();
+}
+
+void CPU::proc_rst()
+{
+  goto_addr(cpu_context.cur_instruction->param, true);
+}
+
+void CPU::proc_inc()
+{
+  u16 val = cpu_read_reg(cpu_context.cur_instruction->reg_1) + 1;
+
+  if (is_16_bit(cpu_context.cur_instruction->reg_1)) {
+    emulator.emulator_cycles(1);
+  }
+
+  if (cpu_context.cur_instruction->reg_1 == RT_HL
+      && cpu_context.cur_instruction->mode == AM_MR)
+  {
+    val = memory_bus.bus_read(cpu_read_reg(RT_HL)) + 1;
+    val &= 0xFF;
+    memory_bus.bus_write(cpu_read_reg(RT_HL), val);
+  } else {
+    cpu_set_reg(cpu_context.cur_instruction->reg_1, val);
+    val = cpu_read_reg(cpu_context.cur_instruction->reg_1);
+  }
+
+  if (cpu_context.cur_opcode & 0x03) {
+    return;
+  }
+
+  cpu_set_flags(val == 0, 0, (val & 0x0F) == 0, -1);
+}
+
+void CPU::proc_dec()
+{
+  u16 val = cpu_read_reg(cpu_context.cur_instruction->reg_1) - 1;
+
+  if (is_16_bit(cpu_context.cur_instruction->reg_1)) {
+    emulator.emulator_cycles(1);
+  }
+
+  if (cpu_context.cur_instruction->reg_1 == RT_HL
+      && cpu_context.cur_instruction->mode == AM_MR)
+  {
+    val = memory_bus.bus_read(cpu_read_reg(RT_HL)) - 1;
+    memory_bus.bus_write(cpu_read_reg(RT_HL), val);
+  } else {
+    cpu_set_reg(cpu_context.cur_instruction->reg_1, val);
+    val = cpu_read_reg(cpu_context.cur_instruction->reg_1);
+  }
+
+  if (cpu_context.cur_opcode & 0x0B) {
+    return;
+  }
+
+  cpu_set_flags(val == 0, 1, (val & 0x0F) == 0, -1);
+}
+
+void CPU::proc_add()
+{
+  u32 val = cpu_read_reg(cpu_context.cur_instruction->reg_1)
+      + cpu_context.fetched_data;
+  bool is16bit = is_16_bit(cpu_context.cur_instruction->reg_1);
+
+  if (is16bit) {
+    emulator.emulator_cycles(1);
+  }
+
+  if (cpu_context.cur_instruction->reg_1 == RT_SP) {
+    val = cpu_read_reg(cpu_context.cur_instruction->reg_1)
+        + (char)cpu_context.fetched_data;
+  }
+
+  int z = (val & 0xFF) == 0;
+  int h = (cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xF)
+          + (cpu_context.fetched_data & 0xF)
+      >= 0x10;
+  int c = (int)(cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xFF)
+          + (int)(cpu_context.fetched_data & 0xFF)
+      >= 0x100;
+
+  if (is16bit) {
+    z = -1;
+    h = (cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xFFF)
+            + (cpu_context.fetched_data & 0xFFF)
+        >= 0x1000;
+    u32 n = ((u32)cpu_read_reg(cpu_context.cur_instruction->reg_1))
+        + ((u32)cpu_context.fetched_data);
+    c = n >= 0x10000;
+  }
+
+  if (cpu_context.cur_instruction->reg_1 == RT_SP) {
+    z = 0;
+    h = (cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xF)
+            + (cpu_context.fetched_data & 0xF)
+        >= 0x10;
+    c = (int)(cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xFF)
+            + (int)(cpu_context.fetched_data & 0xFF)
+        > 0x100;
+  }
+
+  cpu_set_reg(cpu_context.cur_instruction->reg_1, val & 0xFFFF);
+  cpu_set_flags(z, 0, h, c);
+}
+
+void CPU::proc_adc()
+{
+  u16 u = cpu_context.fetched_data;
+  u16 a = cpu_context.registers.a;
+  u16 c = CPU_FLAG_C(cpu_context);
+
+  cpu_context.registers.a = (a + u + c) & 0xFF;
+
+  cpu_set_flags(cpu_context.registers.a == 0,
+                0,
+                (a & 0xF) + (u & 0xF) + c > 0xF,
+                a + u + c > 0xFF);
+}
+
+void CPU::proc_sub()
+{
+  u16 val = cpu_read_reg(cpu_context.cur_instruction->reg_1)
+      - cpu_context.fetched_data;
+
+  int z = val == 0;
+  int h = ((int)cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xF)
+          - ((int)cpu_context.fetched_data & 0xF)
+      < 0;
+  int c = ((int)cpu_read_reg(cpu_context.cur_instruction->reg_1))
+          - ((int)cpu_context.fetched_data)
+      < 0;
+
+  cpu_set_reg(cpu_context.cur_instruction->reg_1, val);
+  cpu_set_flags(z, 1, h, c);
+}
+
+void CPU::proc_sbc()
+{
+  u16 val = cpu_context.fetched_data + CPU_FLAG_C(cpu_context);
+
+  int z = cpu_read_reg(cpu_context.cur_instruction->reg_1) - val == 0;
+  int h = ((int)cpu_read_reg(cpu_context.cur_instruction->reg_1) & 0xF)
+          - ((int)cpu_context.fetched_data & 0xF)
+          - ((int)CPU_FLAG_C(cpu_context))
+      < 0;
+  int c = ((int)cpu_read_reg(cpu_context.cur_instruction->reg_1))
+          - ((int)cpu_context.fetched_data) - ((int)CPU_FLAG_C(cpu_context))
+      < 0;
+
+  cpu_set_reg(cpu_context.cur_instruction->reg_1,
+              cpu_read_reg(cpu_context.cur_instruction->reg_1) - val);
+  cpu_set_flags(z, 1, h, c);
+}
+
+void CPU::proc_and()
+{
+  cpu_context.registers.a &= cpu_context.fetched_data;
+  cpu_set_flags(cpu_context.registers.a == 0, 0, 1, 0);
+}
+
+void CPU::proc_or()
+{
+  cpu_context.registers.a |= cpu_context.fetched_data;
+  cpu_set_flags(cpu_context.registers.a == 0, 0, 1, 0);
+}
+
+void CPU::goto_addr(u16 address, bool pushpc)
+{
+  if (check_cond()) {
+    if (pushpc) {
+      emulator.emulator_cycles(2);
+      stack_push16(cpu_context.registers.pc);
+    }
+
+    cpu_context.registers.pc = address;
+    emulator.emulator_cycles(1);
+  }
+}
+
+bool CPU::is_16_bit(register_type rt)
+{
+  return rt >= RT_AF;
+}
+
+register_type CPU::decode_reg(u8 reg)
+{
+  if (reg > 0b111) {
+    return RT_NONE;
+  }
+  return rt_lookup[reg];
 }
 
 void CPU::proc_nop() {}
@@ -468,7 +911,7 @@ void CPU::proc_ld()
 {
   if (cpu_context.dest_is_mem) {
     // if it's a 16 bit register
-    if (cpu_context.cur_instruction->reg_2 >= RT_AF) {
+    if (is_16_bit(cpu_context.cur_instruction->reg_2)) {
       emulator.emulator_cycles(1);
       memory_bus.bus_write16(cpu_context.mem_destination,
                              cpu_context.fetched_data);
@@ -500,10 +943,244 @@ void CPU::proc_ld()
   cpu_set_reg(cpu_context.cur_instruction->reg_1, cpu_context.fetched_data);
 }
 
+void CPU::proc_ldh()
+{
+  if (cpu_context.cur_instruction->reg_1 == RT_A) {
+    cpu_set_reg(cpu_context.cur_instruction->reg_1,
+                memory_bus.bus_read(0xFF00 | cpu_context.fetched_data));
+  } else {
+    memory_bus.bus_write(0xFF00 | cpu_context.fetched_data,
+                         cpu_context.registers.a);
+  }
+
+  emulator.emulator_cycles(1);
+}
+
 void CPU::proc_xor()
 {
   cpu_context.registers.a ^= cpu_context.fetched_data & 0xFF;
   cpu_set_flags(cpu_context.registers.a == 0, 0, 0, 0);
+}
+
+void CPU::proc_cp()
+{
+  int n = (int)cpu_context.registers.a - (int)cpu_context.fetched_data;
+
+  cpu_set_flags(n == 0,
+                1,
+                ((int)cpu_context.registers.a & 0x0F)
+                        - ((int)cpu_context.fetched_data & 0x0F)
+                    < 0,
+                n < 0);
+}
+
+void CPU::proc_rlca()
+{
+  u8 u = cpu_context.registers.a;
+  bool c = (u >> 7) & 1;
+  u = (u << 1) | c;
+  cpu_context.registers.a = u;
+
+  cpu_set_flags(0, 0, 0, c);
+}
+
+void CPU::proc_rrca()
+{
+  u8 u = cpu_context.registers.a & 1;
+  cpu_context.registers.a >>= 1;
+  cpu_context.registers.a |= (u << 7);
+
+  cpu_set_flags(0, 0, 0, u);
+}
+
+void CPU::proc_rla()
+{
+  u8 u = cpu_context.registers.a;
+  u8 cf = CPU_FLAG_C(cpu_context);
+  u8 c = (u >> 7) & 1;
+
+  cpu_context.registers.a = (u << 1) | cf;
+  cpu_set_flags(0, 0, 0, c);
+}
+
+void CPU::proc_rra()
+{
+  u8 carry = CPU_FLAG_C(cpu_context);
+  u8 new_c = cpu_context.registers.a;
+
+  cpu_context.registers.a >>= 1;
+  cpu_context.registers.a |= (carry << 7);
+
+  cpu_set_flags(0, 0, 0, new_c);
+}
+
+void CPU::proc_stop()
+{
+  fprintf(stderr, "STOPPING!\n");
+  exit(-5);
+}
+
+void CPU::proc_daa()
+{
+  u8 u = 0;
+  int fc = 0;
+
+  if (CPU_FLAG_H(cpu_context)
+      || (!CPU_FLAG_N(cpu_context) && (cpu_context.registers.a & 0x0f) > 9))
+  {
+    u = 6;
+  }
+
+  if (CPU_FLAG_C(cpu_context)
+      || (!CPU_FLAG_N(cpu_context) && cpu_context.registers.a > 0x99))
+  {
+    u |= 0x60;
+    fc = 1;
+  }
+
+  cpu_context.registers.a += CPU_FLAG_N(cpu_context) ? -u : u;
+
+  cpu_set_flags(cpu_context.registers.a == 0, -1, 0, fc);
+}
+
+void CPU::proc_cpl()
+{
+  cpu_context.registers.a = ~cpu_context.registers.a;
+  cpu_set_flags(-1, 1, 1, -1);
+}
+
+void CPU::proc_scf()
+{
+  cpu_set_flags(-1, 0, 0, 1);
+}
+
+void CPU::proc_ccf()
+{
+  cpu_set_flags(-1, 0, 0, CPU_FLAG_C(cpu_context) ^ 1);
+}
+
+void CPU::proc_halt()
+{
+  cpu_context.halted = true;
+}
+
+void CPU::proc_ei()
+{
+  cpu_context.enabling_ime = true;
+}
+
+void CPU::proc_cb()
+{
+  u8 op = cpu_context.fetched_data;
+  register_type reg = decode_reg(op & 0b111);
+  u8 bit = (op >> 3) & 0b111;
+  u8 bit_op = (op >> 6) & 0b11;
+  u8 reg_val = cpu_read_reg8(reg);
+
+  emulator.emulator_cycles(1);
+
+  if (reg == RT_HL) {
+    emulator.emulator_cycles(2);
+  }
+
+  switch (bit_op) {
+    case 1:
+      // BIT
+      cpu_set_flags(!(reg_val & (1 << bit)), 0, 1, -1);
+      return;
+
+    case 2:
+      // RST
+      reg_val &= ~(1 << bit);
+      cpu_set_reg8(reg, reg_val);
+      return;
+
+    case 3:
+      // SET
+      reg_val |= (1 << bit);
+      cpu_set_reg8(reg, reg_val);
+      return;
+  }
+
+  bool flagC = CPU_FLAG_C(cpu_context);
+
+  switch (bit) {
+    case 0: {
+      // RLC
+      bool setC = false;
+      u8 result = (reg_val << 1) & 0xFF;
+
+      // if bit 7 is set
+      if ((reg_val & (1 << 7)) != 0) {
+        result |= 1;
+        setC = true;
+      }
+
+      cpu_set_reg8(reg, result);
+      cpu_set_flags(result == 0, 0, 0, setC);
+    } break;
+
+    case 1: {
+      // RRC
+      u8 old = reg_val;
+      reg_val >>= 1;
+      reg_val |= (old << 7);
+
+      cpu_set_reg8(reg, reg_val);
+      cpu_set_flags(!reg_val, 0, 0, old & 1);
+    } break;
+
+    case 2: {
+      // RL
+      u8 old = reg_val;
+      reg_val <<= 1;
+      reg_val |= flagC;
+
+      cpu_set_reg8(reg, reg_val);
+      cpu_set_flags(!reg_val, 0, 0, !!(old & 0x80));
+    } break;
+
+    case 3: {
+      // RR
+      u8 old = reg_val;
+      reg_val >>= 1;
+      reg_val |= (flagC << 7);
+
+      cpu_set_reg8(reg, reg_val);
+      cpu_set_flags(!reg_val, 0, 0, old & 1);
+    } break;
+
+    case 4: {
+      // SLA
+      u8 old = reg_val;
+      reg_val <<= 1;
+
+      cpu_set_reg8(reg, reg_val);
+      cpu_set_flags(!reg_val, 0, 0, !!(old & 0x80));
+    } break;
+
+    case 5: {
+      // SRA
+      u8 old = (u8)reg_val >> 1;
+
+      cpu_set_reg8(reg, reg_val);
+      cpu_set_flags(!reg_val, 0, 0, reg_val & 1);
+    } break;
+
+    case 6: {
+      // SWAP
+      reg_val = ((reg_val & 0xF0) >> 4) | ((reg_val & 0xF) << 4);
+      cpu_set_reg8(reg, reg_val);
+      cpu_set_flags(reg_val == 0, 0, 0, 0);
+    } break;
+
+    case 7: {
+      // SRL
+      u8 u = reg_val >> 1;
+      cpu_set_reg8(reg, u);
+      cpu_set_flags(!u, 0, 0, reg_val);
+    } break;
+  }
 }
 
 bool CPU::check_cond()
@@ -529,8 +1206,5 @@ bool CPU::check_cond()
 
 void CPU::proc_jp()
 {
-  if (check_cond()) {
-    cpu_context.registers.pc = cpu_context.fetched_data;
-    emulator.emulator_cycles(1);
-  }
+  goto_addr(cpu_context.fetched_data, false);
 }

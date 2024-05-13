@@ -1,9 +1,6 @@
-#include <iostream>
-#include <string>
+#include <emulator.hpp>
 
-#include "emulator.hpp"
-
-int main()
+int main(int argc, char* argv[])
 {
   Emulator emu;
   return emu.emulator_start(

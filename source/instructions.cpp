@@ -278,6 +278,7 @@ instruction instructions[0x100] = {
     {IN_POP, AM_R, RT_AF},
     {IN_LD, AM_R_MR, RT_A, RT_C},
     {IN_DI},
+    {},
     {IN_PUSH, AM_R, RT_AF},
     {IN_OR, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x30},

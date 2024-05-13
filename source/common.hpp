@@ -1,5 +1,8 @@
 #pragma once
+#include <iostream>
+
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef uint8_t u8;
 typedef uint16_t u16;

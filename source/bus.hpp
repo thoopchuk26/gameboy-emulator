@@ -1,5 +1,6 @@
 #pragma once
 #include <common.hpp>
+#include <ram.hpp>
 
 class Emulator;
 
@@ -18,4 +19,5 @@ public:
 
 private:
   Emulator& emulator;
+  Ram ram;
 };

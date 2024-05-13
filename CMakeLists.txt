@@ -22,7 +22,8 @@ add_library(
     source/cart.cpp
     source/cpu.cpp
     source/instructions.cpp
-)
+    source/ram.cpp
+    source/ui.cpp)
 
 target_include_directories(
     gameboy-emulator_lib ${warning_guard}
@@ -33,13 +34,13 @@ target_include_directories(
 target_compile_features(gameboy-emulator_lib PUBLIC cxx_std_17)
 
 find_package(fmt REQUIRED)
-target_link_libraries(gameboy-emulator_lib PRIVATE fmt::fmt)
+target_link_libraries(gameboy-emulator_lib PUBLIC fmt::fmt)
 
 find_package(SDL2 REQUIRED)
-target_link_libraries(gameboy-emulator_lib PRIVATE SDL2::SDL2)
+target_link_libraries(gameboy-emulator_lib PUBLIC SDL2::SDL2)
 
 find_package(SDL2_ttf REQUIRED)
-target_link_libraries(gameboy-emulator_lib PRIVATE $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>)
+target_link_libraries(gameboy-emulator_lib PUBLIC $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>)
 
 # ---- Declare executable ----
 

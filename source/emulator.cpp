@@ -1,5 +1,3 @@
-#include <SDL.h>
-#include <SDL_ttf.h>
 #include <emulator.hpp>
 
 int Emulator::emulator_start(std::string rom)
@@ -11,12 +9,10 @@ int Emulator::emulator_start(std::string rom)
 
   printf("Cart loaded..\n");
 
-  SDL_Init(SDL_INIT_VIDEO);
-  printf("SDL INIT\n");
-  TTF_Init();
-  printf("TTF INIT\n");
+  ui.ui_init();
 
   cpu.cpu_init();
+
   context.running = true;
   context.paused = false;
   context.ticks = 0;
