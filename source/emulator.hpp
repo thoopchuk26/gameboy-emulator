@@ -28,6 +28,7 @@ public:
   int emulator_start(std::string rom);
   void emulator_cycles(int cpu_cycles);
   EmulatorContext* get_context();
+  void cpu_run();
   void delay(u32 ms);
 
 private:

@@ -1,6 +1,8 @@
 #pragma once
 
 #define SDL_MAIN_HANDLED
+#include <mutex>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <common.hpp>
@@ -27,4 +29,5 @@ public:
 
 private:
   Emulator& emulator;
+  std::mutex _m;
 };

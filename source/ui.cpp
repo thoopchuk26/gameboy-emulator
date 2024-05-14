@@ -3,6 +3,11 @@
 
 void UserInterface::ui_init()
 {
+  SDL_Init(SDL_INIT_VIDEO);
+  printf("SDL_INIT\n");
+  TTF_Init();
+  printf("TTF_INIT\n");
+
   SDL_CreateWindowAndRenderer(
       screenWidth, screenHeight, 0, &sdlWindow, &sdlRenderer);
 }

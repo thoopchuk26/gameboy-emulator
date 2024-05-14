@@ -1,4 +1,7 @@
+#include <thread>
+
 #include <emulator.hpp>
+#include <windows.h>
 
 int Emulator::emulator_start(std::string rom)
 {
@@ -13,6 +16,20 @@ int Emulator::emulator_start(std::string rom)
 
   cpu.cpu_init();
 
+  std::thread t1(&Emulator::cpu_run, this);
+
+  while (!context.die) {
+    Sleep(1);
+    ui.ui_handle_events();
+  }
+
+  t1.detach();
+
+  return 0;
+}
+
+void Emulator::cpu_run()
+{
   context.running = true;
   context.paused = false;
   context.ticks = 0;
@@ -24,11 +41,10 @@ int Emulator::emulator_start(std::string rom)
     }
     if (!cpu.cpu_step()) {
       printf("CPU Stopped\n");
-      return -3;
+      exit(-3);
     }
     context.ticks++;
   }
-  return 0;
 }
 
 void Emulator::emulator_cycles(int cpu_cycles) {}
