@@ -1,7 +1,5 @@
 #pragma once
-#include <string>
 #include <unordered_map>
-#include <vector>
 
 #include <common.hpp>
 
@@ -131,6 +129,23 @@ struct CartridgeContext
   u32 rom_size;
   std::vector<u8> rom_data;
   RomHeader* header;
+
+  // mbc1 related data
+  bool ram_enabled;
+  bool ram_banking;
+
+  u8* rom_bank_x;
+  u8 banking_mode;
+
+  u8 rom_bank_value;
+  u8 ram_bank_value;
+
+  u8* ram_bank;  // current selected ram bank
+  u8* ram_banks[16];  // all ram banks
+
+  // for battery
+  bool battery;  // has battery
+  bool need_save;  // should save battery backup.
 };
 
 class Cartridge

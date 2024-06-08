@@ -44,16 +44,14 @@ u8 Bus::bus_read(u16 address)
   } else if (address < 0xFF80) {
     // IO Registers...
     // TODO
-    printf("UNSUPPORTED bus_read(%04X)\n", address);
+    return emulator.io.io_read(address);
   } else if (address == 0xFFFF) {
     // CPU ENABLE REGISTER...
     // TODO
     return emulator.cpu.cpu_get_ie_register();
   }
 
-  printf("UNSUPPORTED bus_read(%04X)\n", address);
-
-  return 0;
+  return ram.hram_read(address);
 }
 
 void Bus::bus_write(u16 address, u8 value)
@@ -83,7 +81,7 @@ void Bus::bus_write(u16 address, u8 value)
   } else if (address < 0xFF80) {
     // IO Registers...
     // TODO
-    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    emulator.io.io_write(address, value);
     // NO_IMPL
   } else if (address == 0xFFFF) {
     // CPU SET ENABLE REGISTER

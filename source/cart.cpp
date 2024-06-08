@@ -1,6 +1,4 @@
 #include <fstream>
-#include <string>
-#include <vector>
 
 #include <cart.hpp>
 
@@ -17,6 +15,15 @@ const char* Cartridge::cart_lic_name()
 
 u8 Cartridge::cart_read(u16 address)
 {
+  if (address < 0x4000) {
+    return context.rom_data[address];
+  }
+
+  if ((address & 0xE000) == 0xA000) {
+    if (!context.ram_enabled) {
+      return 0xFF;
+    }
+  }
   return context.rom_data[address];
 }
 

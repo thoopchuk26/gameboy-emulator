@@ -1,5 +1,4 @@
 #include <cpu.hpp>
-#include <fmt/core.h>
 #include <instructions.hpp>
 
 instruction instructions[0x100] = {
@@ -241,7 +240,7 @@ instruction instructions[0x100] = {
     {IN_RET, AM_IMP, RT_NONE, RT_NONE, CT_NC},
     {IN_POP, AM_R, RT_DE},
     {IN_JP, AM_D16, RT_NONE, RT_NONE, CT_NC},
-    {},
+    {IN_NONE},
     {IN_CALL, AM_D16, RT_NONE, RT_NONE, CT_NC},
     {IN_PUSH, AM_R, RT_DE},
     {IN_SUB, AM_R_D8, RT_A},
@@ -249,9 +248,9 @@ instruction instructions[0x100] = {
     {IN_RET, AM_IMP, RT_NONE, RT_NONE, CT_C},
     {IN_RETI},
     {IN_JP, AM_D16, RT_NONE, RT_NONE, CT_C},
-    {},
+    {IN_NONE},
     {IN_CALL, AM_D16, RT_NONE, RT_NONE, CT_C},
-    {},
+    {IN_NONE},
     {IN_SBC, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x18},
 
@@ -259,17 +258,17 @@ instruction instructions[0x100] = {
     {IN_LDH, AM_A8_R, RT_NONE, RT_A},
     {IN_POP, AM_R, RT_HL},
     {IN_LD, AM_MR_R, RT_C, RT_A},
-    {},
-    {},
+    {IN_NONE},
+    {IN_NONE},
     {IN_PUSH, AM_R, RT_HL},
     {IN_AND, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x20},
     {IN_ADD, AM_R_D8, RT_SP},
     {IN_JP, AM_R, RT_HL},
     {IN_LD, AM_A16_R, RT_NONE, RT_A},
-    {},
-    {},
-    {},
+    {IN_NONE},
+    {IN_NONE},
+    {IN_NONE},
     {IN_XOR, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x28},
 
@@ -278,7 +277,7 @@ instruction instructions[0x100] = {
     {IN_POP, AM_R, RT_AF},
     {IN_LD, AM_R_MR, RT_A, RT_C},
     {IN_DI},
-    {},
+    {IN_NONE},
     {IN_PUSH, AM_R, RT_AF},
     {IN_OR, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x30},
@@ -286,8 +285,8 @@ instruction instructions[0x100] = {
     {IN_LD, AM_R_R, RT_SP, RT_HL},
     {IN_LD, AM_R_A16, RT_A},
     {IN_EI},
-    {},
-    {},
+    {IN_NONE},
+    {IN_NONE},
     {IN_CP, AM_R_D8, RT_A},
     {IN_RST, AM_IMP, RT_NONE, RT_NONE, CT_NONE, 0x38},
 };
@@ -297,7 +296,7 @@ instruction* instruction_by_opcode(u8 opcode)
   return &instructions[opcode];
 }
 
-const char* instruction_lookup[] = {
+static std::string instruction_lookup[] = {
     "<NONE>", "NOP",     "LD",     "INC",    "DEC",    "RLCA",  "ADD",
     "RRCA",   "STOP",    "RLA",    "JR",     "RRA",    "DAA",   "CPL",
     "SCF",    "CCF",     "HALT",   "ADC",    "SUB",    "SBC",   "AND",
@@ -306,7 +305,7 @@ const char* instruction_lookup[] = {
     "RST",    "IN_ERR",  "IN_RLC", "IN_RRC", "IN_RL",  "IN_RR", "IN_SLA",
     "IN_SRA", "IN_SWAP", "IN_SRL", "IN_BIT", "IN_RES", "IN_SET"};
 
-static const char* register_lookup[] = {"<NONE>",
+static std::string register_lookup[] = {"<NONE>",
                                         "A",
                                         "F",
                                         "B",
@@ -322,15 +321,10 @@ static const char* register_lookup[] = {"<NONE>",
                                         "SP",
                                         "PC"};
 
-const char* instruction_name(instruction_type t)
-{
-  return instruction_lookup[t];
-}
-
 std::string instruction_to_str(CPUContext* cpu_context)
 {
   instruction* inst = cpu_context->cur_instruction;
-  std::string str = fmt::format("{}", instruction_lookup[inst->type]);
+  std::string str = fmt::format("{:s}", instruction_lookup[inst->type]);
 
   switch (inst->mode) {
     case AM_IMP:
@@ -338,45 +332,40 @@ std::string instruction_to_str(CPUContext* cpu_context)
 
     case AM_R_D16:
     case AM_R_A16:
-      str = fmt::format("{} {},${}4X",
+      str = fmt::format("{:s} {:s},${:04X}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         cpu_context->fetched_data);
       break;
 
     case AM_R:
-      str = fmt::format(str,
-                        "{} {}",
+      str = fmt::format("{:s} {:s}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1]);
       break;
 
     case AM_R_R:
-      str = fmt::format(str,
-                        "{} {},{}",
+      str = fmt::format("{:s} {:s},{:s}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
       break;
 
     case AM_MR_R:
-      str = fmt::format(str,
-                        "{} ({}),{}",
+      str = fmt::format("{:s} ({:s}),{:s}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
       break;
 
     case AM_MR:
-      str = fmt::format(str,
-                        "{} ({})",
+      str = fmt::format("{:s} ({:s})",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1]);
       break;
 
     case AM_R_MR:
-      str = fmt::format(str,
-                        "{} {},({})",
+      str = fmt::format("{:s} {:s},({:s})",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
@@ -384,95 +373,84 @@ std::string instruction_to_str(CPUContext* cpu_context)
 
     case AM_R_D8:
     case AM_R_A8:
-      str = fmt::format(str,
-                        "{} {},${}2X",
+      str = fmt::format("{:s} {:s},${:02X}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         cpu_context->fetched_data & 0xFF);
       break;
 
     case AM_R_HLI:
-      str = fmt::format(str,
-                        "{} {},({}+)",
+      str = fmt::format("{:s} {:s},({:s}+)",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
       break;
 
     case AM_R_HLD:
-      str = fmt::format(str,
-                        "{} {},({}-)",
+      str = fmt::format("{:s} {:s},({:s}-)",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
       break;
 
     case AM_HLI_R:
-      str = fmt::format(str,
-                        "{} ({}+),{}",
+      str = fmt::format("{:s} ({:s}+),{:s}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
       break;
 
     case AM_HLD_R:
-      str = fmt::format(str,
-                        "{} ({}-),{}",
+      str = fmt::format("{:s} ({:s}-),{:s}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         register_lookup[inst->reg_2]);
       break;
 
     case AM_A8_R:
-      str = fmt::format(str,
-                        "{} ${}2X,{}",
+      /*str = fmt::format("{:s ${:02X,{:s",
                         instruction_lookup[inst->type],
-                        // bus_read(cpu_context->registers.pc - 1),
-                        register_lookup[inst->reg_2]);
+                        bus_read(ctx->regs.pc - 1),
+                        register_lookup[inst->reg_2]);*/
 
       break;
 
     case AM_HL_SPR:
-      str = fmt::format(str,
-                        "{} ({}),SP+{}",
+      str = fmt::format("{:s} ({:s}),SP+{:d}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         cpu_context->fetched_data & 0xFF);
       break;
 
     case AM_D8:
-      str = fmt::format(str,
-                        "{} ${}2X",
+      str = fmt::format("{:s} ${:02X}",
                         instruction_lookup[inst->type],
                         cpu_context->fetched_data & 0xFF);
       break;
 
     case AM_D16:
-      str = fmt::format(str,
-                        "{} ${}4X",
+      str = fmt::format("{:s} ${:04X}",
                         instruction_lookup[inst->type],
                         cpu_context->fetched_data);
       break;
 
     case AM_MR_D8:
-      str = fmt::format(str,
-                        "{} ({}),${}2X",
+      str = fmt::format("{:s} ({:s}),${:02X}",
                         instruction_lookup[inst->type],
                         register_lookup[inst->reg_1],
                         cpu_context->fetched_data & 0xFF);
       break;
 
     case AM_A16_R:
-      str = fmt::format(str,
-                        "{} (${}4X),{}",
+      str = fmt::format("{:s} (${:04X}),{:s}",
                         instruction_lookup[inst->type],
                         cpu_context->fetched_data,
                         register_lookup[inst->reg_2]);
       break;
 
     default:
-      fprintf(stderr, "INVALID AM: {}\n", inst->mode);
-      exit(-7);
+      fprintf(stderr, "INVALID AM: {:d\n", inst->mode);
+      exit(-5);
   }
 
   return str;

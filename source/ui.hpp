@@ -1,7 +1,6 @@
 #pragma once
 
 #define SDL_MAIN_HANDLED
-#include <mutex>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -20,14 +19,12 @@ public:
   int screenWidth = 1024, screenHeight = 720;
 
   UserInterface(Emulator& emu)
-      : emulator(emu)
-  {
-  }
+      : emulator(emu) {};
 
   void ui_init();
   void ui_handle_events();
+  void delay(u32 ms);
 
 private:
   Emulator& emulator;
-  std::mutex _m;
 };

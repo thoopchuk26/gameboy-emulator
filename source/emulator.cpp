@@ -14,8 +14,6 @@ int Emulator::emulator_start(std::string rom)
 
   ui.ui_init();
 
-  cpu.cpu_init();
-
   std::thread t1(&Emulator::cpu_run, this);
 
   while (!context.die) {
@@ -23,31 +21,41 @@ int Emulator::emulator_start(std::string rom)
     ui.ui_handle_events();
   }
 
-  t1.detach();
+  t1.join();
 
   return 0;
 }
 
 void Emulator::cpu_run()
 {
+  timer.timer_init();
+  cpu.cpu_init();
+
   context.running = true;
   context.paused = false;
   context.ticks = 0;
 
-  while (context.running) {
+  while (context.running && !context.die) {
     if (context.paused) {
       delay(10);
       continue;
     }
     if (!cpu.cpu_step()) {
       printf("CPU Stopped\n");
-      exit(-3);
+      return;
     }
-    context.ticks++;
   }
 }
 
-void Emulator::emulator_cycles(int cpu_cycles) {}
+void Emulator::emulator_cycles(int cpu_cycles)
+{
+  for (int i = 0; i < cpu_cycles; i++) {
+    for (int n = 0; n < 4; n++) {
+      context.ticks++;
+      timer.timer_tick();
+    }
+  }
+}
 
 void Emulator::delay(u32 ms) {}
 

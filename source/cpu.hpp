@@ -1,10 +1,11 @@
 #pragma once
 #include <map>
-#include <string>
 
 #include <bus.hpp>
 #include <common.hpp>
 #include <instructions.hpp>
+#include <io.hpp>
+#include <ram.hpp>
 
 #define CPU_FLAG_Z(a) (BIT(a.registers.f, 7))
 #define CPU_FLAG_N(a) (BIT(a.registers.f, 6))
@@ -48,6 +49,7 @@ struct CPUContext
   instruction* cur_instruction;
 
   bool halted;
+  bool die;
   bool stepping;
 
   bool int_master_enabled;
@@ -61,11 +63,7 @@ class CPU
 public:
   CPU(Emulator& emu)
       : emulator(emu)
-      , memory_bus(emu)
-  {
-  }
-
-  Bus memory_bus;
+      , bus(emu) {};
 
   void cpu_init();
   bool cpu_step();
@@ -76,19 +74,28 @@ public:
   u8 cpu_get_ie_register();
   void cpu_set_ie_register(u8 n);
   CPURegisters* cpu_get_registers();
+  u8 cpu_get_int_flags();
+  void cpu_request_interrupts(interrupt_type t);
+  void cpu_set_int_flags(u8 value);
+  CPUContext* cpu_get_context();
 
 private:
   CPUContext cpu_context;
   Emulator& emulator;
+  Ram ram;
+  Bus bus;
+
+  std::string dbg_msg;
+
+  void debug_update();
+  void debug_print();
 
   // get/set functions for the cpu
-  u16 reverse(u16 n);
   u16 cpu_read_reg(register_type rt);
   void cpu_set_reg(register_type rt, u16 val);
   u8 cpu_read_reg8(register_type rt);
   void cpu_set_reg8(register_type rt, u8 val);
-  u8 cpu_get_int_flags();
-  void cpu_set_int_flags(u8 value);
+
   void cpu_set_flags(char z, char n, char h, char c);
 
   // functions for handling instruction logic
@@ -131,9 +138,11 @@ private:
   // handles all cb instructions
   void proc_cb();
 
+  // instruction helper functions
   void goto_addr(u16 address, bool pushpc);
   bool is_16_bit(register_type rt);
   register_type decode_reg(u8 reg);
+  u16 reverse(u16 n);
 
   // stack logic functions
   void stack_push(u8 data);
@@ -143,7 +152,6 @@ private:
 
   // interrupt logic functions
   void cpu_handle_interrupts();
-  void cpu_request_interrupts(interrupt_type t);
   void interrupt_handle(u16 address);
   bool interrupt_check(u16 address, interrupt_type t);
 };

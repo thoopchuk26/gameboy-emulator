@@ -1,7 +1,10 @@
 #pragma once
 
 #include <cart.hpp>
+#include <common.hpp>
 #include <cpu.hpp>
+#include <io.hpp>
+#include <timer.hpp>
 #include <ui.hpp>
 
 struct EmulatorContext
@@ -18,12 +21,14 @@ public:
   Emulator()
       : cpu(*this)
       , ui(*this)
-  {
-  }
+      , timer(*this)
+      , io(*this) {};
 
   Cartridge cart;
   CPU cpu;
   UserInterface ui;
+  Timer timer;
+  IO io;
 
   int emulator_start(std::string rom);
   void emulator_cycles(int cpu_cycles);

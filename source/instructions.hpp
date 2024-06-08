@@ -1,5 +1,8 @@
 #pragma once
+
 #include <common.hpp>
+
+class CPUContext;
 
 enum address_mode
 {
@@ -118,4 +121,4 @@ struct instruction
 };
 
 instruction* instruction_by_opcode(u8 opcode);
-const char* instruction_name(instruction_type t);
+std::string instruction_to_str(CPUContext* cpu_context);

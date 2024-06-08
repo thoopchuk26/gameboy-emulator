@@ -4,8 +4,8 @@
 
 struct RamContext
 {
-  u8 wram[0x2000];
-  u8 hram[0x80];
+  std::array<u8, 0x2000> wram;
+  std::array<u8, 0x80> hram;
 };
 
 class Ram

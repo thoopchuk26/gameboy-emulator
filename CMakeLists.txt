@@ -18,12 +18,14 @@ include(cmake/variables.cmake)
 add_library(
     gameboy-emulator_lib OBJECT
     source/emulator.cpp
-    source/bus.cpp
     source/cart.cpp
     source/cpu.cpp
     source/instructions.cpp
     source/ram.cpp
-    source/ui.cpp)
+    source/ui.cpp 
+    source/io.cpp 
+    source/bus.cpp
+    source/timer.cpp)
 
 target_include_directories(
     gameboy-emulator_lib ${warning_guard}
