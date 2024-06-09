@@ -19,6 +19,10 @@ void IO::io_write(u16 address, u8 value)
     emulator.cpu.cpu_set_int_flags(value);
     return;
   }
+  if (address == 0xFF46) {
+    emulator.cpu.dma.dma_start(value);
+    fmt::print("DMA start\n");
+  }
 
   fmt::print("UNSUPPORTED bus_write({:04X})\n", address);
 }
@@ -37,6 +41,11 @@ u8 IO::io_read(u16 address)
   if (address == 0xFF0F) {
     return emulator.cpu.cpu_get_int_flags();
   }
+
+  if (address == 0xFF44) {
+    return ly++;
+  }
+
   fmt::print("UNSUPPORTED bus_read({:04X})\n", address);
   return 0;
 }

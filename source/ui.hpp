@@ -8,6 +8,9 @@
 
 class Emulator;
 
+static unsigned long tile_colors[4] = {
+    0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
+
 class UserInterface
 {
 public:
@@ -16,7 +19,13 @@ public:
   SDL_Texture* sdlTexture;
   SDL_Surface* screen;
 
+  SDL_Window* sdlDebugWindow;
+  SDL_Renderer* sdlDebugRenderer;
+  SDL_Texture* sdlDebugTexture;
+  SDL_Surface* debugScreen;
+
   int screenWidth = 1024, screenHeight = 720;
+  int scale = 4;
 
   UserInterface(Emulator& emu)
       : emulator(emu) {};
@@ -24,6 +33,11 @@ public:
   void ui_init();
   void ui_handle_events();
   void delay(u32 ms);
+  void update_debug_window();
+  void display_tile(
+      SDL_Surface* surface, u16 startLocation, u16 tileNum, int x, int y);
+
+  void ui_update();
 
 private:
   Emulator& emulator;

@@ -3,8 +3,10 @@
 
 #include <bus.hpp>
 #include <common.hpp>
+#include <dma.hpp>
 #include <instructions.hpp>
 #include <io.hpp>
+#include <ppu.hpp>
 #include <ram.hpp>
 
 #define CPU_FLAG_Z(a) (BIT(a.registers.f, 7))
@@ -63,7 +65,13 @@ class CPU
 public:
   CPU(Emulator& emu)
       : emulator(emu)
-      , bus(emu) {};
+      , bus(emu)
+      , dma(*this) {};
+
+  Ram ram;
+  Bus bus;
+  PPU ppu;
+  DMA dma;
 
   void cpu_init();
   bool cpu_step();
@@ -77,13 +85,12 @@ public:
   u8 cpu_get_int_flags();
   void cpu_request_interrupts(interrupt_type t);
   void cpu_set_int_flags(u8 value);
+
   CPUContext* cpu_get_context();
 
 private:
   CPUContext cpu_context;
   Emulator& emulator;
-  Ram ram;
-  Bus bus;
 
   std::string dbg_msg;
 

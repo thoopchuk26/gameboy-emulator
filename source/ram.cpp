@@ -5,7 +5,7 @@ u8 Ram::wram_read(u16 address)
   address -= 0xC000;
 
   if (address >= 0x2000) {
-    printf("INVALID WRAM ADDR %08X\n", address + 0xC000);
+    fmt::print("INVALID WRAM ADDR {:08X}\n", address + 0xC000);
     exit(-1);
   }
 

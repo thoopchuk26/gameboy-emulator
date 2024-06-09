@@ -25,7 +25,9 @@ add_library(
     source/ui.cpp 
     source/io.cpp 
     source/bus.cpp
-    source/timer.cpp)
+    source/timer.cpp
+    source/ppu.cpp
+    source/dma.cpp)
 
 target_include_directories(
     gameboy-emulator_lib ${warning_guard}

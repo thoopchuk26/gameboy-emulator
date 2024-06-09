@@ -23,8 +23,7 @@ u8 Bus::bus_read(u16 address)
     return emulator.cart.cart_read(address);
   } else if (address < 0xA000) {
     // Char/Map Data
-    // TODO
-    printf("UNSUPPORTED bus_read(%04X)\n", address);
+    return emulator.cpu.ppu.ppu_vram_read(address);
   } else if (address < 0xC000) {
     // Cartridge RAM
     return emulator.cart.cart_read(address);
@@ -36,18 +35,15 @@ u8 Bus::bus_read(u16 address)
     return 0;
   } else if (address < 0xFEA0) {
     // OAM
-    // TODO
-    printf("UNSUPPORTED bus_read(%04X)\n", address);
+    return emulator.cpu.ppu.ppu_oam_read(address);
   } else if (address < 0xFF00) {
     // reserved unusable...
     return 0;
   } else if (address < 0xFF80) {
     // IO Registers...
-    // TODO
     return emulator.io.io_read(address);
   } else if (address == 0xFFFF) {
     // CPU ENABLE REGISTER...
-    // TODO
     return emulator.cpu.cpu_get_ie_register();
   }
 
@@ -61,8 +57,7 @@ void Bus::bus_write(u16 address, u8 value)
     emulator.cart.cart_write(address, value);
   } else if (address < 0xA000) {
     // Char/Map Data
-    // TODO
-    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    emulator.cpu.ppu.ppu_vram_write(address, value);
   } else if (address < 0xC000) {
     // EXT-RAM
     emulator.cart.cart_write(address, value);
@@ -73,19 +68,18 @@ void Bus::bus_write(u16 address, u8 value)
     // reserved echo ram
   } else if (address < 0xFEA0) {
     // OAM
-
-    // TODO
-    printf("UNSUPPORTED bus_write(%04X)\n", address);
+    // Don't write oam if currently in the middle of a dma transfer
+    if (emulator.cpu.dma.dma_transferring()) {
+      return;
+    }
+    emulator.cpu.ppu.ppu_oam_write(address, value);
   } else if (address < 0xFF00) {
     // unusable reserved
   } else if (address < 0xFF80) {
     // IO Registers...
-    // TODO
     emulator.io.io_write(address, value);
-    // NO_IMPL
   } else if (address == 0xFFFF) {
     // CPU SET ENABLE REGISTER
-
     emulator.cpu.cpu_set_ie_register(value);
   } else {
     ram.hram_write(address, value);

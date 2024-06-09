@@ -27,7 +27,10 @@ u8 Cartridge::cart_read(u16 address)
   return context.rom_data[address];
 }
 
-void Cartridge::cart_write(u16 address, u8 value) {}
+void Cartridge::cart_write(u16 address, u8 value)
+{
+  printf("cart_write(%04X)\n", address);
+}
 
 const char* Cartridge::cart_type_name()
 {
