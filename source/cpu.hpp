@@ -6,6 +6,7 @@
 #include <dma.hpp>
 #include <instructions.hpp>
 #include <io.hpp>
+#include <lcd.hpp>
 #include <ppu.hpp>
 #include <ram.hpp>
 
@@ -66,12 +67,15 @@ public:
   CPU(Emulator& emu)
       : emulator(emu)
       , bus(emu)
-      , dma(*this) {};
+      , dma(*this)
+      , lcd(*this)
+      , ppu(emu) {};
 
   Ram ram;
   Bus bus;
   PPU ppu;
   DMA dma;
+  LCD lcd;
 
   void cpu_init();
   bool cpu_step();

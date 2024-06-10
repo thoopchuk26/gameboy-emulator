@@ -124,6 +124,11 @@ void UserInterface::display_tile(
   }
 }
 
+u32 UserInterface::get_ticks()
+{
+  return SDL_GetTicks();
+}
+
 void UserInterface::ui_update()
 {
   update_debug_window();

@@ -27,11 +27,6 @@ void DMA::dma_tick()
   context.byte++;
 
   context.active = context.byte < 0xA0;
-
-  if (!context.active) {
-    fmt::print("DMA DONE!\n");
-    Sleep(2000);
-  }
 }
 
 bool DMA::dma_transferring()

@@ -34,7 +34,6 @@ public:
   void emulator_cycles(int cpu_cycles);
   EmulatorContext* get_context();
   void cpu_run();
-  void delay(u32 ms);
 
 private:
   EmulatorContext context;

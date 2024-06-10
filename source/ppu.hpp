@@ -1,6 +1,15 @@
 #pragma once
 
+#include <vector>
+
 #include <common.hpp>
+
+class Emulator;
+
+static const int LINES_PER_FRAME = 154;
+static const int TICKS_PER_LINE = 456;
+static const int YRES = 144;
+static const int XRES = 160;
 
 struct OAMEntry
 {
@@ -30,11 +39,30 @@ struct PPUContext
 {
   std::array<OAMEntry, 40> oam_ram;
   std::array<u8, 0x2000> vram;
+
+  u32 current_frame;
+  u32 line_ticks;
+  std::vector<u32> video_buffer;
 };
+
+struct FrameData
+{
+  long prev_frame_time;
+  long start_timer;
+  long frame_count;
+};
+
+static const u32 target_frame_time = 1000 / 60;
 
 class PPU
 {
 public:
+  PPU(Emulator& e)
+      : emu(e) {};
+
+  FrameData frames;
+  PPUContext context;
+
   void ppu_init();
   void ppu_tick();
 
@@ -44,6 +72,12 @@ public:
   void ppu_vram_write(u16 address, u8 value);
   u8 ppu_vram_read(u16 address);
 
+  void increment_ly();
+  void ppu_mode_oam();
+  void ppu_mode_transfer();
+  void ppu_mode_vblank();
+  void ppu_mode_hblank();
+
 private:
-  PPUContext context;
+  Emulator& emu;
 };

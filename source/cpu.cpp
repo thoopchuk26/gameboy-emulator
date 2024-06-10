@@ -1,9 +1,7 @@
-#include "cpu.hpp"
-
 #include <cpu.hpp>
 #include <emulator.hpp>
 
-#include "cpu.hpp"
+#define CPU_DEBUG 0
 
 register_type rt_lookup[] = {RT_B, RT_C, RT_D, RT_E, RT_H, RT_L, RT_HL, RT_A};
 
@@ -25,6 +23,8 @@ void CPU::cpu_init()
   cpu_context.enabling_ime = false;
 
   emulator.timer.timer_get_context()->div = 0xABCC;
+
+  ppu.ppu_init();
 }
 
 CPUContext* CPU::cpu_get_context()
@@ -234,6 +234,7 @@ bool CPU::cpu_step()
     emulator.emulator_cycles(1);
     fetch_data();
 
+#if CPU_DEBUG == 1
     std::string flags;
     flags += (cpu_context.registers.f & (1 << 7) ? 'Z' : '-');
     flags += (cpu_context.registers.f & (1 << 6) ? 'N' : '-');
@@ -267,6 +268,8 @@ bool CPU::cpu_step()
 
     debug_update();
     debug_print();
+
+#endif
 
     execute();
   } else {

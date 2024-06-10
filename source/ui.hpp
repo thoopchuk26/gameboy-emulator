@@ -36,6 +36,7 @@ public:
   void update_debug_window();
   void display_tile(
       SDL_Surface* surface, u16 startLocation, u16 tileNum, int x, int y);
+  u32 get_ticks();
 
   void ui_update();
 
