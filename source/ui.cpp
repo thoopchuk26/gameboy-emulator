@@ -15,6 +15,21 @@ void UserInterface::ui_init()
   SDL_CreateWindowAndRenderer(
       screenWidth, screenHeight, 0, &sdlWindow, &sdlRenderer);
 
+  screen = SDL_CreateRGBSurface(0,
+                                screenWidth,
+                                screenHeight,
+                                32,
+                                0x00FF0000,
+                                0x0000FF00,
+                                0x000000FF,
+                                0xFF000000);
+
+  sdlTexture = SDL_CreateTexture(sdlRenderer,
+                                 SDL_PIXELFORMAT_ARGB8888,
+                                 SDL_TEXTUREACCESS_STREAMING,
+                                 screenWidth,
+                                 screenHeight);
+
   SDL_CreateWindowAndRenderer(
       16 * 8 * scale, 32 * 8 * scale, 0, &sdlDebugWindow, &sdlDebugRenderer);
 
@@ -42,15 +57,14 @@ void UserInterface::ui_handle_events()
 {
   SDL_Event e;
   while (SDL_PollEvent(&e) > 0) {
+    if (e.type == SDL_KEYDOWN) {
+      ui_on_key(true, e.key.keysym.sym);
+    }
+    if (e.type == SDL_KEYUP) {
+      ui_on_key(false, e.key.keysym.sym);
+    }
     if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) {
       emulator.get_context()->die = true;
-    }
-    if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE) {
-      if (emulator.get_context()->paused) {
-        emulator.get_context()->paused = false;
-      } else {
-        emulator.get_context()->paused = true;
-      }
     }
   }
 }
@@ -131,5 +145,64 @@ u32 UserInterface::get_ticks()
 
 void UserInterface::ui_update()
 {
+  SDL_Rect rc;
+  rc.x = rc.y = 0;
+  rc.w = rc.h = 2048;
+
+  std::vector<u32>& buffer = emulator.cpu.ppu.context.video_buffer;
+
+  for (int line_num = 0; line_num < YRES; line_num++) {
+    for (int x = 0; x < XRES; x++) {
+      rc.x = x * scale;
+      rc.y = line_num * scale;
+      rc.w = scale;
+      rc.h = scale;
+
+      SDL_FillRect(screen, &rc, buffer[x + (line_num * XRES)]);
+    }
+  }
+
+  SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
+  SDL_RenderClear(sdlRenderer);
+  SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+  SDL_RenderPresent(sdlRenderer);
+
   update_debug_window();
+}
+
+void UserInterface::ui_on_key(bool down, u32 key_code)
+{
+  switch (key_code) {
+    case SDLK_z:
+      emulator.gamepad.context.controller.b = down;
+      break;
+    case SDLK_x:
+      emulator.gamepad.context.controller.a = down;
+      break;
+    case SDLK_RETURN:
+      emulator.gamepad.context.controller.start = down;
+      break;
+    case SDLK_TAB:
+      emulator.gamepad.context.controller.select = down;
+      break;
+    case SDLK_UP:
+      emulator.gamepad.context.controller.up = down;
+      break;
+    case SDLK_DOWN:
+      emulator.gamepad.context.controller.down = down;
+      break;
+    case SDLK_LEFT:
+      emulator.gamepad.context.controller.left = down;
+      break;
+    case SDLK_RIGHT:
+      emulator.gamepad.context.controller.right = down;
+      break;
+    case SDLK_SPACE:
+      if (emulator.get_context()->paused && down) {
+        emulator.get_context()->paused = false;
+      } else if (!emulator.get_context()->paused && down) {
+        emulator.get_context()->paused = true;
+      }
+      break;
+  }
 }

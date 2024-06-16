@@ -3,6 +3,7 @@
 #include <cart.hpp>
 #include <common.hpp>
 #include <cpu.hpp>
+#include <gamepad.hpp>
 #include <io.hpp>
 #include <timer.hpp>
 #include <ui.hpp>
@@ -29,6 +30,7 @@ public:
   UserInterface ui;
   Timer timer;
   IO io;
+  Gamepad gamepad;
 
   int emulator_start(std::string rom);
   void emulator_cycles(int cpu_cycles);

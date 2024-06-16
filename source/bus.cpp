@@ -35,6 +35,9 @@ u8 Bus::bus_read(u16 address)
     return 0;
   } else if (address < 0xFEA0) {
     // OAM
+    if (emulator.cpu.dma.dma_transferring()) {
+      return 0xFF;
+    }
     return emulator.cpu.ppu.ppu_oam_read(address);
   } else if (address < 0xFF00) {
     // reserved unusable...

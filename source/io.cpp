@@ -3,6 +3,10 @@
 
 void IO::io_write(u16 address, u8 value)
 {
+  if (address == 0xFF00) {
+    emulator.gamepad.gamepad_set_sel(value);
+    return;
+  }
   if (address == 0xFF01) {
     serial_data[0] = value;
     return;
@@ -29,6 +33,9 @@ void IO::io_write(u16 address, u8 value)
 
 u8 IO::io_read(u16 address)
 {
+  if (address == 0xFF00) {
+    return emulator.gamepad.gamepad_get_output();
+  }
   if (address == 0xFF01) {
     return serial_data[0];
   }

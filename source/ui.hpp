@@ -24,7 +24,7 @@ public:
   SDL_Texture* sdlDebugTexture;
   SDL_Surface* debugScreen;
 
-  int screenWidth = 1024, screenHeight = 720;
+  int screenWidth = 1024, screenHeight = 768;
   int scale = 4;
 
   UserInterface(Emulator& emu)
@@ -39,6 +39,8 @@ public:
   u32 get_ticks();
 
   void ui_update();
+  void ui_on_key(bool down, u32 key_code);
+
 
 private:
   Emulator& emulator;
