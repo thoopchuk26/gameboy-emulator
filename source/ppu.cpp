@@ -165,6 +165,10 @@ void PPU::ppu_mode_hblank()
         frames.frame_count = 0;
 
         printf("FPS: %d\n", fps);
+
+        if (emu.cart.cart_need_save()) {
+          emu.cart.cart_battery_save();
+        }
       }
 
       frames.frame_count++;

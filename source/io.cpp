@@ -23,6 +23,10 @@ void IO::io_write(u16 address, u8 value)
     emulator.cpu.cpu_set_int_flags(value);
     return;
   }
+  if (BETWEEN(address, 0xFF10, 0xFF3F)) {
+    // This is where my sound would be, IF I HAD SOME!
+    return;
+  }
   if (BETWEEN(address, 0xFF40, 0xFF4B)) {
     emulator.cpu.lcd.lcd_write(address, value);
     return;
@@ -48,7 +52,10 @@ u8 IO::io_read(u16 address)
   if (address == 0xFF0F) {
     return emulator.cpu.cpu_get_int_flags();
   }
-
+  if (BETWEEN(address, 0xFF10, 0xFF3F)) {
+    // This is where my sound would be, IF I HAD SOME!
+    return 0;
+  }
   if (BETWEEN(address, 0xFF40, 0xFF4B)) {
     return emulator.cpu.lcd.lcd_read(address);
   }

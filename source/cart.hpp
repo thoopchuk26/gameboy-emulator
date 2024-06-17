@@ -134,14 +134,14 @@ struct CartridgeContext
   bool ram_enabled;
   bool ram_banking;
 
-  u8* rom_bank_x;
+  std::vector<u8> rom_bank_x;
   u8 banking_mode;
 
   u8 rom_bank_value;
   u8 ram_bank_value;
 
-  u8* ram_bank;  // current selected ram bank
-  u8* ram_banks[16];  // all ram banks
+  std::vector<u8> ram_bank;  // current selected ram bank
+  std::array<std::vector<u8>, 16> ram_banks;  // all ram banks
 
   // for battery
   bool battery;  // has battery
@@ -156,6 +156,12 @@ public:
   const char* cart_lic_name();
   u8 cart_read(u16 address);
   void cart_write(u16 address, u8 value);
+  bool cart_need_save();
+  bool cart_mbc1();
+  bool cart_battery();
+  void cart_set_banking();
+  void cart_battery_load();
+  void cart_battery_save();
 
 private:
   CartridgeContext context;
